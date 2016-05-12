@@ -35,20 +35,45 @@
 
       Pokemon.prototype.fetch = function (done) {
         var self = this;
-        $.ajax({
-          url: self.url,
-          method: "GET",
-          success: function (data) {
-            for (var key in data) {
-              self[key] = data[key];
+
+        var savedPokemon = localStorage.getItem(self.url);
+        if(savedPokemon !== null) {
+          savedPokemon = JSON.parse(savedPokemon);
+        }
+
+        // If we don't have this pokemon
+        var oneDayInMS = 86400 * 1000;
+        var now = Date.now();
+
+        if(savedPokemon === null || savedPokemon.cacheDate + oneDayInMS < now) {
+          $.ajax({
+            url: self.url,
+            method: "GET",
+            success: function (data) {
+              for (var key in data) {
+                self[key] = data[key];
+              }
+
+              // Save the data!
+              data.cacheDate = Date.now();
+              localStorage.setItem(self.url, JSON.stringify(data));
+              
+              // Move on!
+              done();
+            },
+            error: function () {
+              self.error = true;
             }
-            done();
-          },
-          error: function () {
-            self.error = true;
+          });
+          console.log("hay, just after the ajax kicked off");
+        }
+        else {
+          for (var key in savedPokemon) {
+            self[key] = savedPokemon[key];
           }
-        })
-        console.log("hay, just after the ajax kicked off")
+
+          done();
+        }
       }
 
       /*
@@ -89,10 +114,11 @@
         return pokeDiv;
       }
 
+      // SCRIPT START -- MAIN
       var pokeArray;
 
       $.ajax({
-        url: "http://pokeapi.co/api/v2/" + "pokemon/",
+        url: "http://pokeapi.co/api/v2/pokemon/",
         method: "GET",
         success: function (data) {
           pokeArray = data.results.map(function (pokemonData) {
