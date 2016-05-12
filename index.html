@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.2/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="col-md-4" id="pokelist"></div>
+      <div class="col-md-8" id="pokedex"></div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script>
+      var Pokemon = function(config) {
+        this.name = config.name || "";
+        this.url = config.url || "";
+      }
+
+      Pokemon.prototype.fetch = function (done) {
+        var self = this;
+        $.ajax({
+          url: self.url,
+          method: "GET",
+          success: function (data) {
+            for (var key in data) {
+              self[key] = data[key];
+            }
+            done();
+          },
+          error: function () {
+            self.error = true;
+          }
+        })
+        console.log("hay, just after the ajax kicked off")
+      }
+
+      /*
+        Create an HTML DOM Element to put on the page that represents this pokemon
+      */
+      Pokemon.prototype.renderNav = function () {
+        var self = this;
+        var pokeDiv = $("<div>");
+        var pokeName = $('<p>' + this.name + "</p>")
+        pokeDiv.append(pokeName);
+
+        pokeName.click(function () {
+          self.fetch(function () {
+            $("#pokedex").html(self.renderInfo());
+          })
+        })
+
+        return pokeDiv;
+      }
+
+      Pokemon.prototype.renderInfo = function () {
+        // Make the container div
+        var pokeDiv = $("<div>");
+        //Make the header
+        pokeDiv.append($('<h2>' + this.name + "</h2>"))
+
+        //Add the image
+        var pokeImg = $('<img src="'+this.sprites.front_default+'">');
+        pokeDiv.append(pokeImg);
+
+        //List all abilities
+        var pokeAbilities = $("<ul>");
+        for (var i = 0; i < this.abilities.length; i++) {
+          pokeAbilities.append($("<li>" +this.abilities[i].ability.name + "</li>"))
+        }
+        pokeDiv.append(pokeAbilities);
+
+        return pokeDiv;
+      }
+
+      var pokeArray;
+
+      $.ajax({
+        url: "http://pokeapi.co/api/v2/" + "pokemon/",
+        method: "GET",
+        success: function (data) {
+          pokeArray = data.results.map(function (pokemonData) {
+            return new Pokemon(pokemonData);
+          });
+
+          pokeArray.forEach(function (pokemon) {
+            var pokeDiv = pokemon.renderNav();
+            $("#pokelist").append(pokeDiv);
+          })
+        },
+        error: function () {
+
+        }
+      });
+
+
+    </script>
+  </body>
+</html>
